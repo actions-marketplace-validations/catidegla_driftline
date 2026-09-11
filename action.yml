@@ -1,0 +1,75 @@
+name: driftline
+description: Detect when an LLM provider changes the model under a name that did not change.
+author: Christ-loisele Atidegla
+
+branding:
+  icon: activity
+  color: blue
+
+inputs:
+  probes:
+    description: Probe definitions, JSON lines.
+    default: probes.jsonl
+  label:
+    description: The series to compare within. Keep branches on their own label so they never become the baseline for main.
+    default: main
+  db:
+    description: History database. Cache or commit this, since drift is only visible against history.
+    default: .driftline/history.db
+  min-effect:
+    description: How far a distribution must move to be worth reporting, 0 to 1.
+    default: '0.15'
+  fdr:
+    description: False discovery rate across probes.
+    default: '0.05'
+  comment:
+    description: Write the markdown report to the job summary.
+    default: 'true'
+  fail-on-drift:
+    description: Fail the job when a probe drifts. Set false to report without blocking.
+    default: 'true'
+
+outputs:
+  drifted:
+    description: How many probes drifted.
+    value: ${{ steps.check.outputs.drifted }}
+  proven:
+    description: How many of those the provider itself confirmed.
+    value: ${{ steps.check.outputs.proven }}
+
+runs:
+  using: composite
+  steps:
+    - id: check
+      shell: bash
+      run: |
+        set +e
+        npx --yes @catidegla/driftline check \
+          --probes "${{ inputs.probes }}" \
+          --label "${{ inputs.label }}" \
+          --db "${{ inputs.db }}" \
+          --min-effect "${{ inputs.min-effect }}" \
+          --fdr "${{ inputs.fdr }}" \
+          --json > driftline.json
+        code=$?
+        set -e
+
+        drifted=$(node -e "console.log(JSON.parse(require('fs').readFileSync('driftline.json','utf8')).summary.drifted)")
+        proven=$(node -e "console.log(JSON.parse(require('fs').readFileSync('driftline.json','utf8')).summary.proven)")
+        echo "drifted=$drifted" >> "$GITHUB_OUTPUT"
+        echo "proven=$proven" >> "$GITHUB_OUTPUT"
+
+        if [ "${{ inputs.comment }}" = "true" ]; then
+          npx --yes @catidegla/driftline check \
+            --probes "${{ inputs.probes }}" --label "${{ inputs.label }}" --db "${{ inputs.db }}" \
+            --markdown --no-save >> "$GITHUB_STEP_SUMMARY" || true
+        fi
+
+        # Exit 3 means the run could not be read, which is not the same as
+        # drift and should not be reported as it.
+        if [ "$code" = "3" ]; then
+          echo "::warning::driftline could not read this run: too many requests failed"
+          exit 0
+        fi
+
+        if [ "${{ inputs.fail-on-drift }}" = "true" ]; then exit $code; fi

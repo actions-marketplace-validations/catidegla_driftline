@@ -1,0 +1,10 @@
+/node_modules/
+/.driftline/
+*.tgz
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.env
+.env.*
+driftline.svg

@@ -1,0 +1,57 @@
+{
+  "name": "@catidegla/driftline",
+  "version": "0.1.0",
+  "description": "Detect when your LLM provider changes the model under a name that did not change. Statistical drift detection over committed probes, provider identity capture, zero dependencies, no service.",
+  "type": "module",
+  "bin": {
+    "driftline": "bin/driftline.mjs"
+  },
+  "exports": {
+    ".": "./src/verdict.mjs",
+    "./statistics": "./src/statistics.mjs",
+    "./fingerprint": "./src/fingerprint.mjs",
+    "./providers": "./src/providers/index.mjs",
+    "./store": "./src/store.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "action.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test test/statistics.test.mjs test/fingerprint.test.mjs test/identity.test.mjs test/probe.test.mjs test/verdict.test.mjs test/store.test.mjs test/run.test.mjs test/cli.test.mjs test/integration.test.mjs"
+  },
+  "keywords": [
+    "llm",
+    "drift",
+    "model-drift",
+    "regression-testing",
+    "canary",
+    "monitoring",
+    "openai",
+    "anthropic",
+    "gemini",
+    "evals",
+    "ci",
+    "observability",
+    "statistics"
+  ],
+  "author": "Christ-loisele Atidegla",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/catidegla/driftline.git"
+  },
+  "homepage": "https://github.com/catidegla/driftline#readme",
+  "bugs": {
+    "url": "https://github.com/catidegla/driftline/issues"
+  }
+}
