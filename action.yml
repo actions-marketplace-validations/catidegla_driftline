@@ -1,4 +1,4 @@
-name: driftline
+name: driftline check
 description: Detect when an LLM provider changes the model under a name that did not change.
 author: Christ-loisele Atidegla
 
