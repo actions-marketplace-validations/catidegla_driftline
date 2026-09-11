@@ -137,7 +137,7 @@ The refusal strategy matches on surface phrases and will miss a polite deflectio
 ## In CI
 
 ```yaml
-- uses: catidegla/driftline@v0.1.0
+- uses: catidegla/driftline@v0.2.0
   with:
     probes: probes.jsonl
     label: main

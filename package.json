@@ -1,6 +1,6 @@
 {
   "name": "@catidegla/driftline",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Detect when your LLM provider changes the model under a name that did not change. Statistical drift detection over committed probes, provider identity capture, zero dependencies, no service.",
   "type": "module",
   "bin": {
