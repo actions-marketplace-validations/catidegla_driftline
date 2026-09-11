@@ -75,6 +75,7 @@ Options
   --concurrency <n>   requests in flight per probe (default: ${DEFAULT_CONCURRENCY})
   --only <id>         run one probe, repeatable
   --markdown          emit a pull request comment
+  --markdown-out <f>  write that comment to a file, from the same sampling pass
   --json              machine readable output
   --svg <file>        also write the timeline
   --no-save           compare without recording the run
@@ -256,6 +257,14 @@ const commands = {
     db.close();
 
     const unreadable = observations.some((o) => o.unreadable);
+
+    // Written from the same sampling pass rather than from a second run.
+    // Asking for the report separately would send every request again, and
+    // every request here is billed, so a build that wants both a machine
+    // readable result and something a person reads would pay twice.
+    const markdownFile = value('markdown-out', null);
+    if (markdownFile) await writeFile(markdownFile, `${toMarkdown(settled, summary)}
+`);
 
     if (has('json')) {
       console.log(JSON.stringify({ summary, probes: settled }, null, 2));

@@ -17,13 +17,13 @@ inputs:
     description: History database. Cache or commit this, since drift is only visible against history.
     default: .driftline/history.db
   min-effect:
-    description: How far a distribution must move to be worth reporting, 0 to 1.
+    description: How far a distribution must move to be worth reporting, 0 to 1. Significance without an effect size turns a canary into furniture.
     default: '0.15'
   fdr:
-    description: False discovery rate across probes.
+    description: False discovery rate across probes. Thirty probes at five percent produce about one and a half false alarms a day on a provider that never changed.
     default: '0.05'
   comment:
-    description: Write the markdown report to the job summary.
+    description: Write the report to the job summary.
     default: 'true'
   fail-on-drift:
     description: Fail the job when a probe drifts. Set false to report without blocking.
@@ -36,37 +36,52 @@ outputs:
   proven:
     description: How many of those the provider itself confirmed.
     value: ${{ steps.check.outputs.proven }}
+  report:
+    description: Path to the JSON report.
+    value: ${{ steps.check.outputs.report }}
 
 runs:
   using: composite
   steps:
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
     - id: check
       shell: bash
       run: |
+        # One sampling pass, two outputs. Running check again for the report
+        # would send every request a second time, and every request here is
+        # billed by the provider.
+        args=(check
+          --probes "${{ inputs.probes }}"
+          --label "${{ inputs.label }}"
+          --db "${{ inputs.db }}"
+          --min-effect "${{ inputs.min-effect }}"
+          --fdr "${{ inputs.fdr }}"
+        )
+
+        if [ "${{ inputs.comment }}" = "true" ]; then
+          args+=(--markdown-out driftline.md)
+        fi
+
         set +e
-        npx --yes @catidegla/driftline check \
-          --probes "${{ inputs.probes }}" \
-          --label "${{ inputs.label }}" \
-          --db "${{ inputs.db }}" \
-          --min-effect "${{ inputs.min-effect }}" \
-          --fdr "${{ inputs.fdr }}" \
-          --json > driftline.json
+        node "${{ github.action_path }}/bin/driftline.mjs" "${args[@]}" --json > driftline.json
         code=$?
         set -e
 
-        drifted=$(node -e "console.log(JSON.parse(require('fs').readFileSync('driftline.json','utf8')).summary.drifted)")
-        proven=$(node -e "console.log(JSON.parse(require('fs').readFileSync('driftline.json','utf8')).summary.proven)")
+        drifted=$(node -p "JSON.parse(require('fs').readFileSync('driftline.json','utf8')).summary.drifted")
+        proven=$(node -p "JSON.parse(require('fs').readFileSync('driftline.json','utf8')).summary.proven")
         echo "drifted=$drifted" >> "$GITHUB_OUTPUT"
         echo "proven=$proven" >> "$GITHUB_OUTPUT"
+        echo "report=driftline.json" >> "$GITHUB_OUTPUT"
 
-        if [ "${{ inputs.comment }}" = "true" ]; then
-          npx --yes @catidegla/driftline check \
-            --probes "${{ inputs.probes }}" --label "${{ inputs.label }}" --db "${{ inputs.db }}" \
-            --markdown --no-save >> "$GITHUB_STEP_SUMMARY" || true
-        fi
+        if [ -f driftline.md ]; then cat driftline.md >> "$GITHUB_STEP_SUMMARY"; fi
 
         # Exit 3 means the run could not be read, which is not the same as
-        # drift and should not be reported as it.
+        # drift and must not be reported as it. A job that conflates the two
+        # eventually pages somebody about an expired API key.
         if [ "$code" = "3" ]; then
           echo "::warning::driftline could not read this run: too many requests failed"
           exit 0

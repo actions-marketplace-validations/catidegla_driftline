@@ -134,6 +134,26 @@ It is blind on providers that report no identity at all, and says so in the repo
 
 The refusal strategy matches on surface phrases and will miss a polite deflection that never says "cannot". It is one-sided on purpose: a missed refusal still shows up under `exact` on the same probe, while a false positive would turn every apologetic answer into a category change.
 
+## In CI
+
+```yaml
+- uses: catidegla/driftline@v0.1.0
+  with:
+    probes: probes.jsonl
+    label: main
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+One sampling pass produces both the report and the summary, because every
+request here is billed and asking for the report separately would send them
+all again. A run it could not read exits without failing the job: being unable
+to check is not the same as finding drift, and a job that conflates them
+eventually pages somebody about an expired key.
+
+Labels are separate series, so a canary run from a branch never becomes the
+baseline main is measured against.
+
 ## Cost
 
 A canary is a recurring bill, so the size is printed before anything is sent:
