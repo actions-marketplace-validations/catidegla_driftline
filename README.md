@@ -5,7 +5,7 @@
 Your provider changed the model. The name did not change. Nobody told you.
 
 [![CI](https://github.com/catidegla/driftline/actions/workflows/ci.yml/badge.svg)](https://github.com/catidegla/driftline/actions/workflows/ci.yml)
-[![Node](https://img.shields.io/badge/node-%E2%89%A522.5-339933)](package.json)
+[![Node](https://img.shields.io/badge/node-%E2%89%A522.13-339933)](package.json)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -160,7 +160,9 @@ The suite never calls a paid API. Statistics are pinned against published critic
 
 ## Requirements
 
-Node 22.5 or later, for `node:sqlite`. No other dependency, at runtime or otherwise.
+Node 22.13 or later, which is where `node:sqlite` stopped needing a flag. 22.5 shipped the module
+but only behind `--experimental-sqlite`, so it is not a usable floor and the CI matrix has a row on
+22.13 to keep that honest. No other dependency, at runtime or otherwise.
 
 ## License
 
